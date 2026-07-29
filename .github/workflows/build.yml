@@ -39,7 +39,8 @@ jobs:
       - name: Gather .ipk artifacts
         run: |
           mkdir -p artifacts
-          find bin -name '*.ipk' -print -exec cp {} artifacts/ \;
+          # only our feed's packages, not the SDK's prebuilt base .ipk
+          find bin/packages -path '*/hinet_ci/*.ipk' -print -exec cp {} artifacts/ \;
           echo "Built packages:"; ls -l artifacts
 
       - name: Upload .ipk artifacts
