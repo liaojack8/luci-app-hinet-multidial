@@ -1,0 +1,130 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "HiNet Multi-Dial"
+msgstr ""
+
+msgid "HiNet Multi-Dial Controller"
+msgstr ""
+
+msgid "Dial multiple PPPoE sessions over one physical WAN port, each with its own public IP. The DHCP WAN lifeline is never touched. <strong>Save &amp; Apply</strong> creates or removes the interfaces and reloads the network; the buttons in the status table act on running sessions live."
+msgstr ""
+
+msgid "Controller"
+msgstr ""
+
+msgid "Number of sessions (IPs)"
+msgstr ""
+
+msgid "How many PPPoE sessions to dial. Each becomes wanp&lt;n&gt; with its own public IP and private routing table. Save &amp; Apply creates or removes interfaces to match."
+msgstr ""
+
+msgid "HiNet account (HN number)"
+msgstr ""
+
+msgid "Enter just the 8-digit HN number — <code>@hinet.net</code> is added automatically. Shared by every session. For another ISP, enter the full account including <code>@</code>."
+msgstr ""
+
+msgid "Enter the 8-digit HN number, or a full account containing @."
+msgstr ""
+
+msgid "PPPoE password"
+msgstr ""
+
+msgid "Auto-dial at boot"
+msgstr ""
+
+msgid "When on, the sessions are dialed automatically at boot. When off they stay down until dialed here."
+msgstr ""
+
+msgid "Initial delay (seconds)"
+msgstr ""
+
+msgid "Wait this long after boot before the first dial, letting the DHCP WAN settle."
+msgstr ""
+
+msgid "Delay between sessions (seconds)"
+msgstr ""
+
+msgid "Gap between each dial — staggering avoids a burst of simultaneous PPPoE discovery frames."
+msgstr ""
+
+msgid "Live Sessions"
+msgstr ""
+
+msgid "Per-session control acts immediately on the running interface. The global buttons below dial or stop every session at once (staggered)."
+msgstr ""
+
+msgid "Dial all (staggered)"
+msgstr ""
+
+msgid "Stop all"
+msgstr ""
+
+msgid "Loading…"
+msgstr ""
+
+msgid "status unavailable"
+msgstr ""
+
+msgid "No sessions yet. Set the account and number of sessions above, then Save & Apply."
+msgstr ""
+
+msgid "Session"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Public IP"
+msgstr ""
+
+msgid "Uptime"
+msgstr ""
+
+msgid "Control"
+msgstr ""
+
+msgid "UP"
+msgstr ""
+
+msgid "down"
+msgstr ""
+
+msgid "Dial"
+msgstr ""
+
+msgid "Redial"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Dialing %s…"
+msgstr ""
+
+msgid "Redialing %s…"
+msgstr ""
+
+msgid "Stopping %s…"
+msgstr ""
+
+msgid "Dialing all sessions…"
+msgstr ""
+
+msgid "Stopping all sessions…"
+msgstr ""
+
+msgid "Please wait"
+msgstr ""
+
+msgid "Failed: "
+msgstr ""
+
+msgid "Applied. Interfaces are reconciling to the selected count…"
+msgstr ""
+
+msgid "Apply failed: "
+msgstr ""

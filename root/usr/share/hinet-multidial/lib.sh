@@ -13,6 +13,18 @@ HMD_MTU=1492                         # 1500 - 8B PPPoE/PPP overhead
 HMD_ZONE_NAME="wanppp"               # firewall zone that owns all sessions
 HMD_TAG="hinet-multidial"            # ownership marker on managed interfaces
 HMD_MAX=6
+HMD_DEFAULT_DOMAIN="@hinet.net"      # appended to a bare HN account number
+
+# Resolve a stored account into a full PPPoE username: a bare HN number gets
+# @hinet.net appended; anything already containing '@' is used verbatim (so
+# other ISPs still work). Empty stays empty.
+hmd_resolve_user() {
+	local u="$1"
+	case "$u" in
+		''|*@*) echo "$u" ;;
+		*)      echo "${u}${HMD_DEFAULT_DOMAIN}" ;;
+	esac
+}
 
 # Echo the section names of every proto=pppoe interface, sorted.
 hmd_managed_ifaces() {
@@ -55,7 +67,7 @@ hmd_count() {
 # wanp1..wanp<count>, all sharing the single global PPPoE account.
 hmd_desired() {
 	local gu gp cnt i
-	gu="$(hmd_global_user)"; gp="$(hmd_global_pass)"
+	gu="$(hmd_resolve_user "$(hmd_global_user)")"; gp="$(hmd_global_pass)"
 	cnt="$(hmd_count)"
 	i=1
 	while [ "$i" -le "$cnt" ]; do

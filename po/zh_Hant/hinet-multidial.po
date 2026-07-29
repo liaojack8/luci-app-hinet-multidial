@@ -1,0 +1,133 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-hinet-multidial\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_Hant\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "HiNet Multi-Dial"
+msgstr "HiNet 多重撥號"
+
+msgid "HiNet Multi-Dial Controller"
+msgstr "HiNet 多重撥號控制器"
+
+msgid "Dial multiple PPPoE sessions over one physical WAN port, each with its own public IP. The DHCP WAN lifeline is never touched. <strong>Save &amp; Apply</strong> creates or removes the interfaces and reloads the network; the buttons in the status table act on running sessions live."
+msgstr "透過單一實體 WAN 埠撥接多條 PPPoE 連線，每條各自取得一個公網 IP。DHCP WAN 主線路不會被更動。<strong>儲存並套用</strong>會建立或移除介面並重新載入網路；狀態表格中的按鈕則即時控制運行中的連線。"
+
+msgid "Controller"
+msgstr "控制器"
+
+msgid "Number of sessions (IPs)"
+msgstr "連線數量（IP 數）"
+
+msgid "How many PPPoE sessions to dial. Each becomes wanp&lt;n&gt; with its own public IP and private routing table. Save &amp; Apply creates or removes interfaces to match."
+msgstr "要撥接的 PPPoE 連線數量。每一條會成為擁有獨立公網 IP 與獨立路由表的 wanp&lt;n&gt; 介面。儲存並套用會依此建立或移除介面。"
+
+msgid "HiNet account (HN number)"
+msgstr "HiNet 帳號（HN 號碼）"
+
+msgid "Enter just the 8-digit HN number — <code>@hinet.net</code> is added automatically. Shared by every session. For another ISP, enter the full account including <code>@</code>."
+msgstr "只需填入 8 位數的 HN 號碼——系統會自動補上 <code>@hinet.net</code>。所有連線共用此帳號。若使用其他 ISP，請填入含 <code>@</code> 的完整帳號。"
+
+msgid "Enter the 8-digit HN number, or a full account containing @."
+msgstr "請輸入 8 位數的 HN 號碼，或含 @ 的完整帳號。"
+
+msgid "PPPoE password"
+msgstr "PPPoE 密碼"
+
+msgid "Auto-dial at boot"
+msgstr "開機時自動撥號"
+
+msgid "When on, the sessions are dialed automatically at boot. When off they stay down until dialed here."
+msgstr "開啟時，連線會在開機時自動撥接；關閉時則保持斷線，直到在此手動撥號。"
+
+msgid "Initial delay (seconds)"
+msgstr "初始延遲（秒）"
+
+msgid "Wait this long after boot before the first dial, letting the DHCP WAN settle."
+msgstr "開機後先等待這段時間再撥第一條連線，讓 DHCP WAN 先穩定。"
+
+msgid "Delay between sessions (seconds)"
+msgstr "各連線間延遲（秒）"
+
+msgid "Gap between each dial — staggering avoids a burst of simultaneous PPPoE discovery frames."
+msgstr "每次撥號之間的間隔——錯開撥號可避免同時送出大量 PPPoE 探索封包。"
+
+msgid "Live Sessions"
+msgstr "即時連線狀態"
+
+msgid "Per-session control acts immediately on the running interface. The global buttons below dial or stop every session at once (staggered)."
+msgstr "單條連線的控制會立即作用於運行中的介面。下方的全域按鈕則一次撥接或停止所有連線（錯開進行）。"
+
+msgid "Dial all (staggered)"
+msgstr "全部撥號（錯開）"
+
+msgid "Stop all"
+msgstr "全部停止"
+
+msgid "Loading…"
+msgstr "載入中…"
+
+msgid "status unavailable"
+msgstr "無法取得狀態"
+
+msgid "No sessions yet. Set the account and number of sessions above, then Save & Apply."
+msgstr "尚無連線。請在上方設定帳號與連線數量，然後儲存並套用。"
+
+msgid "Session"
+msgstr "連線"
+
+msgid "State"
+msgstr "狀態"
+
+msgid "Public IP"
+msgstr "公網 IP"
+
+msgid "Uptime"
+msgstr "連線時間"
+
+msgid "Control"
+msgstr "控制"
+
+msgid "UP"
+msgstr "已連線"
+
+msgid "down"
+msgstr "已斷線"
+
+msgid "Dial"
+msgstr "撥號"
+
+msgid "Redial"
+msgstr "重撥"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Dialing %s…"
+msgstr "正在撥接 %s…"
+
+msgid "Redialing %s…"
+msgstr "正在重撥 %s…"
+
+msgid "Stopping %s…"
+msgstr "正在停止 %s…"
+
+msgid "Dialing all sessions…"
+msgstr "正在撥接所有連線…"
+
+msgid "Stopping all sessions…"
+msgstr "正在停止所有連線…"
+
+msgid "Please wait"
+msgstr "請稍候"
+
+msgid "Failed: "
+msgstr "失敗："
+
+msgid "Applied. Interfaces are reconciling to the selected count…"
+msgstr "已套用。介面正依所選數量進行調整…"
+
+msgid "Apply failed: "
+msgstr "套用失敗："
