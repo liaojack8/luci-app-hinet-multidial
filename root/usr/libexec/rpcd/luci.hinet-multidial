@@ -1,0 +1,160 @@
+#!/bin/sh
+#
+# rpcd backend for luci-app-hinet-multidial.
+#   status              -> controller settings + live per-session state
+#   dial   {iface?}     -> dial all (staggered) or one session
+#   stop   {iface?}     -> hang up all or one session
+#   redial {iface?}     -> stop+dial all or one session
+#   apply               -> reconcile interfaces from config, reload
+#   import              -> seed config 'session' sections from existing wanp*
+#
+. /usr/share/libubox/jshn.sh
+. /usr/share/hinet-multidial/lib.sh
+
+INIT=/etc/init.d/hinet-multidial
+
+# Extract "up|l3dev|address|uptime" for one interface, in a subshell so its jshn
+# parse of the ubus reply cannot clobber a JSON buffer the caller is building.
+iface_info() (
+	local ifc="$1" st up l3 uptime addr=""
+	st=$(ubus call network.interface."$ifc" status 2>/dev/null) || st=""
+	[ -n "$st" ] || { printf '0|||0\n'; return 0; }
+	json_load "$st"
+	json_get_var up up
+	json_get_var l3 l3_device
+	json_get_var uptime uptime
+	if json_is_a ipv4_address array; then
+		json_select ipv4_address
+		if json_is_a 1 object; then
+			json_select 1
+			json_get_var addr address
+			json_select ..
+		fi
+		json_select ..
+	fi
+	printf '%s|%s|%s|%s\n' "${up:-0}" "${l3:-}" "${addr:-}" "${uptime:-0}"
+)
+
+method_status() {
+	local enabled boot_delay dial_delay user count ifc info up l3 addr uptime
+
+	config_load hinet_multidial
+	config_get_bool enabled main enabled 0
+	config_get boot_delay main boot_delay 5
+	config_get dial_delay main dial_delay 3
+	config_get user main username ""
+	count="$(hmd_count)"
+
+	json_init
+	json_add_boolean enabled "$enabled"
+	json_add_int boot_delay "$boot_delay"
+	json_add_int dial_delay "$dial_delay"
+	json_add_int count "$count"
+	json_add_string username "$user"
+	json_add_array sessions
+	for ifc in $(hmd_managed_ifaces); do
+		info=$(iface_info "$ifc")
+		up=${info%%|*};   info=${info#*|}
+		l3=${info%%|*};   info=${info#*|}
+		addr=${info%%|*}; uptime=${info#*|}
+		json_add_object ""
+		json_add_string  iface   "$ifc"
+		json_add_int     index   "${ifc#wanp}"
+		json_add_boolean up      "${up:-0}"
+		json_add_string  device  "$l3"
+		json_add_string  address "$addr"
+		json_add_int     uptime  "${uptime:-0}"
+		json_close_object
+	done
+	json_close_array
+	json_dump
+}
+
+# Adopt any pre-existing wanp<i> interfaces: tag them managed_by=hinet-multidial,
+# lift the shared account from the first one, and set 'count' to the highest
+# contiguous index found. Used once to migrate a hand-built setup into the app.
+method_import() {
+	local ifc idx user pass first=1 maxidx=0
+	for ifc in $(hmd_managed_ifaces); do
+		case "$ifc" in wanp[1-6]) ;; *) continue ;; esac
+		idx="${ifc#wanp}"
+		[ "$idx" -gt "$maxidx" ] && maxidx="$idx"
+		user=$(uci -q get network."$ifc".username)
+		pass=$(uci -q get network."$ifc".password)
+		uci -q set network."$ifc".managed_by="$HMD_TAG"
+		if [ "$first" = 1 ]; then
+			uci -q set hinet_multidial.main.username="$user"
+			uci -q set hinet_multidial.main.password="$pass"
+			first=0
+		fi
+	done
+	[ "$maxidx" -ge 1 ] && uci -q set hinet_multidial.main.count="$maxidx"
+	uci -q commit network
+	uci -q commit hinet_multidial
+	json_init; json_add_boolean ok 1; json_add_int count "$maxidx"; json_dump
+}
+
+# Read optional {"iface":"wanpN"} from stdin.
+_read_iface() {
+	local input ifc=""
+	input=$(cat)
+	[ -n "$input" ] && { json_load "$input" 2>/dev/null && json_get_var ifc iface 2>/dev/null; }
+	echo "$ifc"
+}
+
+method_dial() {
+	local ifc; ifc=$(_read_iface)
+	if [ -n "$ifc" ]; then $INIT dial_one "$ifc" >/dev/null 2>&1
+	else $INIT dial_all >/dev/null 2>&1; fi
+	json_init; json_add_boolean ok 1; json_dump
+}
+
+method_stop() {
+	local ifc; ifc=$(_read_iface)
+	if [ -n "$ifc" ]; then $INIT stop_one "$ifc" >/dev/null 2>&1
+	else $INIT stop_all >/dev/null 2>&1; fi
+	json_init; json_add_boolean ok 1; json_dump
+}
+
+method_redial() {
+	local ifc; ifc=$(_read_iface)
+	if [ -n "$ifc" ]; then
+		hmd_is_managed "$ifc" && { ifdown "$ifc" >/dev/null 2>&1; sleep 1; ifup "$ifc" >/dev/null 2>&1; }
+	else $INIT stop_all >/dev/null 2>&1; sleep 1; $INIT dial_all >/dev/null 2>&1; fi
+	json_init; json_add_boolean ok 1; json_dump
+}
+
+method_apply() {
+	local out; out=$(hmd_reconcile 2>&1)
+	json_init
+	case "$out" in
+		ABORT:*) json_add_boolean ok 0 ;;
+		*)       json_add_boolean ok 1 ;;
+	esac
+	json_add_string message "$out"
+	json_dump
+}
+
+case "$1" in
+	list)
+		json_init
+		json_add_object "status"; json_close_object
+		json_add_object "dial";   json_add_string "iface" ""; json_close_object
+		json_add_object "stop";   json_add_string "iface" ""; json_close_object
+		json_add_object "redial"; json_add_string "iface" ""; json_close_object
+		json_add_object "apply";  json_close_object
+		json_add_object "import"; json_close_object
+		json_dump
+		;;
+	call)
+		case "$2" in
+			status) method_status ;;
+			dial)   method_dial ;;
+			stop)   method_stop ;;
+			redial) method_redial ;;
+			apply)  method_apply ;;
+			import) method_import ;;
+			*)      echo '{}' ;;
+		esac
+		;;
+esac

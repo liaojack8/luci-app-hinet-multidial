@@ -1,0 +1,16 @@
+
+config controller 'main'
+	# Master switch: dial the sessions automatically at boot.
+	# 0 = leave sessions down at boot (dial manually from LuCI).
+	option enabled '0'
+	# Seconds to wait after boot before the first session is dialed.
+	option boot_delay '5'
+	# Seconds to wait between each session's dial (avoids a simultaneous
+	# burst of PPPoE PADI discovery frames).
+	option dial_delay '3'
+	# Number of PPPoE sessions / public IPs to dial: 1..6.
+	# Maps to interfaces wanp1..wanp<count>, each on private table 100+index.
+	option count '1'
+	# PPPoE account shared by every session (HiNet allows this).
+	option username ''
+	option password ''

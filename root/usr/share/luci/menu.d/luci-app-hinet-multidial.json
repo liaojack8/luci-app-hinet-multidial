@@ -1,0 +1,13 @@
+{
+	"admin/network/hinet-multidial": {
+		"title": "HiNet Multi-Dial",
+		"order": 45,
+		"action": {
+			"type": "view",
+			"path": "hinet-multidial/overview"
+		},
+		"depends": {
+			"acl": [ "luci-app-hinet-multidial" ]
+		}
+	}
+}
