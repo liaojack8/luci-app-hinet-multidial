@@ -1,0 +1,10 @@
+#!/bin/sh
+# Enable the controller service so its boot() hook runs on every boot. Whether
+# it actually dials is governed by option 'enabled' in /etc/config/hinet_multidial,
+# not by the rc.d symlink — so this is safe to enable unconditionally.
+/etc/init.d/hinet-multidial enable
+
+# Clear the LuCI menu/ACL cache so the new page appears without a reboot.
+rm -f /tmp/luci-indexcache /tmp/luci-modulecache/* 2>/dev/null
+
+exit 0

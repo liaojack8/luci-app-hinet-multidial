@@ -1,0 +1,125 @@
+#!/bin/sh /etc/rc.common
+#
+# hinet-multidial — staggered PPPoE multi-dial controller for DePINLabs MAX60.
+#
+# The physical WAN (eth1, proto=dhcp) is the SSH lifeline and is NEVER touched by
+# this service — only proto=pppoe interfaces tagged managed_by=hinet-multidial are
+# managed. Shared engine: /usr/share/hinet-multidial/lib.sh
+#
+# procd is used ONLY to auto-reconcile: whenever /etc/config/hinet_multidial is
+# applied (Save & Apply), procd fires reload_service() which syncs the actual
+# wanp<i> interfaces to the chosen count. A tiny idle instance keeps that trigger
+# alive. This makes "set count -> Save & Apply -> interfaces appear" reliable,
+# independent of the browser/JS.
+
+USE_PROCD=1
+START=25
+STOP=89
+EXTRA_COMMANDS="reconcile dial_all stop_all dial_one stop_one"
+EXTRA_HELP="	reconcile        Sync wanp interfaces to the configured count, reload
+	dial_all         Dial every session (staggered)
+	stop_all         Hang up every session
+	dial_one <ifc>   Dial a single session (e.g. wanp2)
+	stop_one <ifc>   Hang up a single session"
+
+PIDFILE=/var/run/hinet-multidial.pid
+
+. /usr/share/hinet-multidial/lib.sh
+
+# The detached worker: wait boot_delay, then ifup each session dial_delay apart.
+_stagger_worker() {
+	local boot_delay="$1" dial_delay="$2"
+	local first=1 ifc
+
+	logger -t hinet-multidial "staggered dial starting (boot_delay=${boot_delay}s, dial_delay=${dial_delay}s)"
+	[ "${boot_delay:-0}" -gt 0 ] 2>/dev/null && sleep "$boot_delay"
+
+	for ifc in $(hmd_managed_ifaces); do
+		if [ "$first" = 1 ]; then first=0; else
+			[ "${dial_delay:-0}" -gt 0 ] 2>/dev/null && sleep "$dial_delay"
+		fi
+		logger -t hinet-multidial "dialing $ifc"
+		ifup "$ifc"
+	done
+
+	logger -t hinet-multidial "staggered dial complete"
+	rm -f "$PIDFILE"
+}
+
+# ---- procd lifecycle -------------------------------------------------------
+
+start_service() {
+	hmd_autostart_off
+
+	# Idle supervised instance: its only purpose is to keep the reload trigger
+	# registered so Save & Apply reliably reaches reload_service().
+	procd_open_instance "trigger"
+	procd_set_param command /bin/sh -c 'while true; do sleep 86400; done'
+	procd_set_param respawn 3600 5 0
+	procd_close_instance
+
+	# Optionally dial at boot.
+	local enabled
+	config_load hinet_multidial
+	config_get_bool enabled main enabled 0
+	if [ "$enabled" = "1" ]; then
+		dial_all
+	else
+		logger -t hinet-multidial "disabled: PPPoE sessions will not auto-dial at boot"
+	fi
+}
+
+stop_service() {
+	stop_all
+}
+
+service_triggers() {
+	procd_add_reload_trigger "hinet_multidial"
+}
+
+# Fired by procd whenever hinet_multidial is applied.
+reload_service() {
+	logger -t hinet-multidial "config applied -> reconciling interfaces"
+	hmd_reconcile
+}
+
+# ---- custom commands -------------------------------------------------------
+
+reconcile() { hmd_reconcile; }
+
+dial_all() {
+	local boot_delay dial_delay
+	config_load hinet_multidial
+	config_get boot_delay main boot_delay 5
+	config_get dial_delay main dial_delay 3
+	hmd_autostart_off
+	_stagger_worker "$boot_delay" "$dial_delay" >/dev/null 2>&1 &
+	echo $! > "$PIDFILE"
+	logger -t hinet-multidial "dial sequence launched (pid $(cat "$PIDFILE"))"
+}
+
+stop_all() {
+	local ifc
+	if [ -f "$PIDFILE" ]; then
+		kill "$(cat "$PIDFILE")" 2>/dev/null
+		rm -f "$PIDFILE"
+	fi
+	for ifc in $(hmd_managed_ifaces); do
+		logger -t hinet-multidial "hanging up $ifc"
+		ifdown "$ifc"
+	done
+}
+
+dial_one() {
+	local ifc="$1"
+	hmd_is_managed "$ifc" || { echo "not a managed session: $ifc"; return 1; }
+	logger -t hinet-multidial "dial_one $ifc"
+	ifup "$ifc"
+}
+
+stop_one() {
+	local ifc="$1"
+	hmd_is_managed "$ifc" || { echo "not a managed session: $ifc"; return 1; }
+	logger -t hinet-multidial "stop_one $ifc"
+	ifdown "$ifc"
+}

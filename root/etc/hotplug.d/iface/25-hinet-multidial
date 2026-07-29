@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Installed by luci-app-hinet-multidial.
+#
+# PPPoE addresses are dynamic, so each session's default route must be (re)placed
+# every time it comes up. Session i (wanp<i>) keeps its default route ONLY in
+# private table 100+i — never the main table — so it can never hijack LAN traffic
+# or the SSH lifeline. Cleared on ifdown.
+
+case "$ACTION" in
+	ifup|ifupdate|ifdown) ;;
+	*) exit 0 ;;
+esac
+
+case "$INTERFACE" in
+	wanp[1-6]) ;;
+	*) exit 0 ;;
+esac
+
+idx="${INTERFACE#wanp}"
+table=$((100 + idx))
+
+if [ "$ACTION" = "ifdown" ]; then
+	ip route flush table "$table" 2>/dev/null
+	logger -t hinet-multidial "hotplug: $INTERFACE down, table $table flushed"
+	exit 0
+fi
+
+. /lib/functions/network.sh
+network_flush_cache
+network_get_device l3dev "$INTERFACE" || l3dev="$DEVICE"
+[ -n "$l3dev" ] || { logger -t hinet-multidial "hotplug: $INTERFACE has no L3 device"; exit 0; }
+
+ip route replace default dev "$l3dev" table "$table" \
+	&& logger -t hinet-multidial "hotplug: $INTERFACE up -> default via $l3dev in table $table" \
+	|| logger -t hinet-multidial "hotplug: $INTERFACE failed to set default in table $table"

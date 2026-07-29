@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# OpenWrt build artifacts
+/ipkg-install/
+*.ipk
+*.apk
+.pkgdir/
+tmp/

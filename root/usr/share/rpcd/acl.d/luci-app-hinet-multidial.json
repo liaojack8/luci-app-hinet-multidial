@@ -1,0 +1,17 @@
+{
+	"luci-app-hinet-multidial": {
+		"description": "Grant access to the HiNet multi-dial controller",
+		"read": {
+			"ubus": {
+				"luci.hinet-multidial": [ "status" ]
+			},
+			"uci": [ "hinet_multidial", "network", "firewall" ]
+		},
+		"write": {
+			"ubus": {
+				"luci.hinet-multidial": [ "dial", "stop", "redial", "apply", "import" ]
+			},
+			"uci": [ "hinet_multidial", "network", "firewall" ]
+		}
+	}
+}
