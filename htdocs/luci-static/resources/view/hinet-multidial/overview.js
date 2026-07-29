@@ -42,7 +42,7 @@ function renderStatus(res, refresh) {
 	if (!sessions.length) {
 		rows.push(E('tr', { 'class': 'tr' }, [
 			E('td', { 'class': 'td', 'colspan': 5 },
-				E('em', {}, _('No sessions defined yet. Add nodes below, set the PPPoE account, then Save & Apply.')))
+				E('em', {}, _('No sessions yet. Set the account and number of sessions above, then Save & Apply.')))
 		]));
 	}
 
@@ -119,9 +119,15 @@ return view.extend({
 		for (var i = 1; i <= 6; i++) o.value(String(i), String(i));
 		o.default = '1';
 
-		o = s.option(form.Value, 'username', _('PPPoE account'),
-			_('Shared by every session — HiNet allows the same account on all of them.'));
-		o.placeholder = 'xxxxxxxx@hinet.net';
+		o = s.option(form.Value, 'username', _('HiNet account (HN number)'),
+			_('Enter just the 8-digit HN number — <code>@hinet.net</code> is added automatically. ' +
+			  'Shared by every session. For another ISP, enter the full account including <code>@</code>.'));
+		o.placeholder = '12345678';
+		o.validate = function(section_id, value) {
+			if (!value || value.indexOf('@') >= 0) return true;
+			if (/^[0-9]{6,12}$/.test(value)) return true;
+			return _('Enter the 8-digit HN number, or a full account containing @.');
+		};
 
 		o = s.option(form.Value, 'password', _('PPPoE password'));
 		o.password = true;
