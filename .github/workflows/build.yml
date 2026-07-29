@@ -31,6 +31,9 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}-${{ matrix.version }}
           FEEDNAME: hinet_ci
+          # Build ONLY our package (+ its i18n subpackages), not the whole feed
+          # set — otherwise the SDK compiles rust/telephony/etc. and takes ~20min.
+          PACKAGES: luci-app-hinet-multidial
           NO_REFRESH_CHECK: true
 
       - name: Gather .ipk artifacts
