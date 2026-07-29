@@ -1,5 +1,7 @@
 # luci-app-hinet-multidial
 
+[![Build](https://github.com/liaojack8/luci-app-hinet-multidial/actions/workflows/build.yml/badge.svg)](https://github.com/liaojack8/luci-app-hinet-multidial/actions/workflows/build.yml)
+
 A LuCI application for OpenWrt that dials **multiple PPPoE sessions over a single
 physical WAN port**, each obtaining its own public IP — controlled entirely from
 the web UI.
