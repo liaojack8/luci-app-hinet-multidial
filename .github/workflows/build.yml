@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # attach .ipk to a Release when a v* tag is pushed
+
+jobs:
+  build:
+    name: build ${{ matrix.arch }} @ ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # LuCI app is arch-independent (PKGARCH:=all); one SDK is enough.
+        # aarch64_cortex-a53 = MT7986A (MAX60) / MT7981B (MAX30) on 24.10.
+        arch: [ aarch64_cortex-a53 ]
+        version: [ '24.10.0' ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build with OpenWrt SDK
+        uses: openwrt/gh-action-sdk@main
+        env:
+          ARCH: ${{ matrix.arch }}-${{ matrix.version }}
+          FEEDNAME: hinet_ci
+          NO_REFRESH_CHECK: true
+
+      - name: Gather .ipk artifacts
+        run: |
+          mkdir -p artifacts
+          find bin -name '*.ipk' -print -exec cp {} artifacts/ \;
+          echo "Built packages:"; ls -l artifacts
+
+      - name: Upload .ipk artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipk-${{ matrix.arch }}-${{ matrix.version }}
+          path: artifacts/*.ipk
+          if-no-files-found: error
+
+      - name: Attach .ipk to Release (on v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.ipk
