@@ -128,3 +128,76 @@ msgstr ""
 
 msgid "Apply failed: "
 msgstr ""
+
+# ---- WireGuard ----
+msgid "Enable WireGuard egress tunnels"
+msgstr ""
+
+msgid "Create one WG tunnel per active session (wg&lt;i&gt; → wanp&lt;i&gt;). A client connects to wan0 on a per-tunnel port; its internet traffic exits via that session's public IP, while ordinary LAN users keep using wan0. WG clients can also reach the LAN."
+msgstr ""
+
+msgid "WireGuard port base"
+msgstr ""
+
+msgid "Tunnel i listens on this port + i (base 51820 → wg1 = 51821). Opened on wan0."
+msgstr ""
+
+msgid "WireGuard Tunnels"
+msgstr ""
+
+msgid "One tunnel per active session. Download a client config (Endpoint auto-filled with wan0's IP) or scan the QR. The pre-shared key adds a symmetric layer — regenerate it any time."
+msgstr ""
+
+msgid "Tunnel"
+msgstr ""
+
+msgid "Client endpoint"
+msgstr ""
+
+msgid "Client"
+msgstr ""
+
+msgid "Enable WireGuard above and Save & Apply — one tunnel appears per active session."
+msgstr ""
+
+msgid "Save & Apply to generate keys"
+msgstr ""
+
+msgid "Config"
+msgstr ""
+
+msgid "QR"
+msgstr ""
+
+msgid "New PSK"
+msgstr ""
+
+msgid "Regenerate all keys"
+msgstr ""
+
+msgid "Regenerate ALL WireGuard keypairs? This invalidates every existing client config."
+msgstr ""
+
+msgid "Rotating keys…"
+msgstr ""
+
+msgid "Regenerating PSK…"
+msgstr ""
+
+msgid "Scan with the WireGuard app"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "QR needs the qrencode package."
+msgstr ""
+
+msgid "no config"
+msgstr ""
+
+msgid "listening"
+msgstr ""
+
+msgid "handshake %ss ago"
+msgstr ""
