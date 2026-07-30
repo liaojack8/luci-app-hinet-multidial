@@ -19,10 +19,15 @@ esac
 
 idx="${INTERFACE#wanp}"
 table=$((100 + idx))
+mark_pref=$((21000 + idx))
+mark="$(printf '0x%02x00' "$idx")"   # session i -> fwmark i<<8
+
+# Clear any stale fwmark rule at our preference (idempotent).
+while ip rule del pref "$mark_pref" 2>/dev/null; do :; done
 
 if [ "$ACTION" = "ifdown" ]; then
 	ip route flush table "$table" 2>/dev/null
-	logger -t hinet-multidial "hotplug: $INTERFACE down, table $table flushed"
+	logger -t hinet-multidial "hotplug: $INTERFACE down, table $table + fwmark rule cleared"
 	exit 0
 fi
 
@@ -31,6 +36,11 @@ network_flush_cache
 network_get_device l3dev "$INTERFACE" || l3dev="$DEVICE"
 [ -n "$l3dev" ] || { logger -t hinet-multidial "hotplug: $INTERFACE has no L3 device"; exit 0; }
 
+# Per-session default route in the private table (never the main table).
 ip route replace default dev "$l3dev" table "$table" \
 	&& logger -t hinet-multidial "hotplug: $INTERFACE up -> default via $l3dev in table $table" \
 	|| logger -t hinet-multidial "hotplug: $INTERFACE failed to set default in table $table"
+
+# fwmark rule: WG traffic marked by the nft chain (0xN00) leaves via this
+# session. Harmless when WG is off — nothing sets the mark, so it never matches.
+ip rule add fwmark "$mark/0xff00" lookup "$table" pref "$mark_pref" 2>/dev/null

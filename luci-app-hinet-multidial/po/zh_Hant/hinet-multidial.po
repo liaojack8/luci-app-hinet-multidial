@@ -134,3 +134,76 @@ msgstr "已套用。介面正依所選數量進行調整…"
 
 msgid "Apply failed: "
 msgstr "套用失敗："
+
+# ---- WireGuard ----
+msgid "Enable WireGuard egress tunnels"
+msgstr "啟用 WireGuard 出口隧道"
+
+msgid "Create one WG tunnel per active session (wg&lt;i&gt; → wanp&lt;i&gt;). A client connects to wan0 on a per-tunnel port; its internet traffic exits via that session's public IP, while ordinary LAN users keep using wan0. WG clients can also reach the LAN."
+msgstr "為每條有效連線建立一條 WG 隧道（wg&lt;i&gt; → wanp&lt;i&gt;）。用戶端連線到 wan0 上各自的埠，其網際網路流量會從該連線的公網 IP 出去，而一般區域網路使用者仍走 wan0。WG 用戶端也可以存取區域網路。"
+
+msgid "WireGuard port base"
+msgstr "WireGuard 起始埠"
+
+msgid "Tunnel i listens on this port + i (base 51820 → wg1 = 51821). Opened on wan0."
+msgstr "隧道 i 監聽此埠 + i（起始 51820 → wg1 = 51821）。會在 wan0 上開放。"
+
+msgid "WireGuard Tunnels"
+msgstr "WireGuard 隧道"
+
+msgid "One tunnel per active session. Download a client config (Endpoint auto-filled with wan0's IP) or scan the QR. The pre-shared key adds a symmetric layer — regenerate it any time."
+msgstr "每條有效連線對應一條隧道。下載用戶端設定檔（連線位址會自動填入 wan0 的 IP）或掃描 QR。預先共用金鑰提供額外的對稱式防護——可隨時重新產生。"
+
+msgid "Tunnel"
+msgstr "隧道"
+
+msgid "Client endpoint"
+msgstr "用戶端連線位址"
+
+msgid "Client"
+msgstr "用戶端"
+
+msgid "Enable WireGuard above and Save & Apply — one tunnel appears per active session."
+msgstr "請在上方啟用 WireGuard 並儲存並套用——每條有效連線會對應出現一條隧道。"
+
+msgid "Save & Apply to generate keys"
+msgstr "儲存並套用以產生金鑰"
+
+msgid "Config"
+msgstr "設定檔"
+
+msgid "QR"
+msgstr "QR"
+
+msgid "New PSK"
+msgstr "更新 PSK"
+
+msgid "Regenerate all keys"
+msgstr "重新產生所有金鑰"
+
+msgid "Regenerate ALL WireGuard keypairs? This invalidates every existing client config."
+msgstr "重新產生所有 WireGuard 金鑰對？這會使所有現有的用戶端設定檔失效。"
+
+msgid "Rotating keys…"
+msgstr "正在輪換金鑰…"
+
+msgid "Regenerating PSK…"
+msgstr "正在重新產生 PSK…"
+
+msgid "Scan with the WireGuard app"
+msgstr "用 WireGuard App 掃描"
+
+msgid "Close"
+msgstr "關閉"
+
+msgid "QR needs the qrencode package."
+msgstr "QR 需要 qrencode 套件。"
+
+msgid "no config"
+msgstr "無設定"
+
+msgid "listening"
+msgstr "等待連線"
+
+msgid "handshake %ss ago"
+msgstr "%s 秒前握手"

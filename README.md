@@ -22,6 +22,12 @@ It works on any provider that permits multi-session PPPoE.
 - **Server-side reconcile**: changing the count and hitting *Save & Apply*
   creates or removes the interfaces automatically via a procd `config.change`
   trigger — no dependence on browser state.
+- **Per-session WireGuard egress** (optional): one tunnel per active session
+  (`wg<i>` → `wanp<i>`). Clients connect to the **stable wan0 IP** on a per-tunnel
+  port; their internet traffic exits via **that session's public IP** (fwmark →
+  routing table `100+i`), while ordinary LAN users keep using wan0 and WG clients
+  can still reach the LAN. Fixed keypairs (stable client configs), editable
+  pre-shared key per tunnel, one-click **client config download + QR**.
 
 ## Safety by design
 

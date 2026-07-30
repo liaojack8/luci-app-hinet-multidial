@@ -14,3 +14,17 @@ config controller 'main'
 	# PPPoE account shared by every session (HiNet allows this).
 	option username ''
 	option password ''
+	# WireGuard egress tunnels: one per active session (wg<i> -> wanp<i>).
+	# Clients connect to wan0's IP on port (wg_port_base + index); their
+	# internet traffic exits via that session's public IP. 0 = disabled.
+	option wg_enabled '0'
+	option wg_port_base '51820'
+
+# One 'wg' section per slot holds the fixed keypairs + PSK (auto-generated
+# on first apply, then stable). The PSK is user-editable from the LuCI panel.
+# config wg 'wg1'
+#	option private_key '...'   # server (fixed)
+#	option public_key  '...'
+#	option psk         '...'   # preshared key
+#	option client_key  '...'   # client private (for downloadable config)
+#	option client_pub  '...'

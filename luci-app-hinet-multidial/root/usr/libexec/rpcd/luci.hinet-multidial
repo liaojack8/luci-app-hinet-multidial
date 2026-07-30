@@ -135,6 +135,115 @@ method_apply() {
 	json_dump
 }
 
+# Read {"index":N} from stdin.
+_read_index() {
+	local input idx=""
+	input=$(cat)
+	[ -n "$input" ] && { json_load "$input" 2>/dev/null && json_get_var idx index 2>/dev/null; }
+	echo "$idx"
+}
+
+# Live WireGuard tunnel state for the active sessions (1..count).
+method_wg_status() {
+	local wg_en ip i port up hs rx tx active
+
+	config_load hinet_multidial
+	config_get_bool wg_en main wg_enabled 0
+	ip="$(hmd_wan_ip)"
+	active="$(hmd_desired | awk -F'\t' '{print $1}')"
+
+	json_init
+	json_add_boolean enabled "$wg_en"
+	json_add_string endpoint "$ip"
+	json_add_array tunnels
+	for i in $active; do
+		[ -n "$i" ] || continue
+		port="$(hmd_wg_port "$i")"
+		up=0; hs=0; rx=0; tx=0
+		if [ -d /sys/class/net/wg$i ]; then
+			up=1
+			hs=$(wg show wg$i latest-handshakes 2>/dev/null | awk 'NR==1{print $2}')
+			set -- $(wg show wg$i transfer 2>/dev/null | awk 'NR==1{print $2, $3}')
+			rx=${1:-0}; tx=${2:-0}
+		fi
+		json_add_object ""
+		json_add_int     index     "$i"
+		json_add_string  session   "wanp$i"
+		json_add_int     port      "$port"
+		json_add_string  pubkey    "$(uci -q get hinet_multidial.wg$i.public_key)"
+		json_add_boolean up        "$up"
+		json_add_int     handshake "${hs:-0}"
+		json_add_int     rx        "${rx:-0}"
+		json_add_int     tx        "${tx:-0}"
+		json_close_object
+	done
+	json_close_array
+	json_dump
+}
+
+# Return the downloadable client .conf (+ QR SVG if qrencode is present).
+method_wg_config() {
+	local idx conf qr
+	idx=$(_read_index)
+	json_init
+	case "$idx" in ''|*[!0-9]*) json_add_boolean ok 0; json_add_string error "bad index"; json_dump; return ;; esac
+	conf="$(hmd_wg_client_conf "$idx" 2>/dev/null)"
+	if [ -z "$conf" ]; then
+		json_add_boolean ok 0
+		json_add_string error "no keys yet — enable WireGuard and Save & Apply first"
+		json_dump; return
+	fi
+	json_add_boolean ok 1
+	json_add_string conf "$conf"
+	if command -v qrencode >/dev/null 2>&1; then
+		qr="$(printf '%s' "$conf" | qrencode -t SVG -o - 2>/dev/null)"
+		[ -n "$qr" ] && json_add_string qr "$qr"
+	fi
+	json_dump
+}
+
+# Set (or regenerate) the pre-shared key for tunnel <index>, then reconcile.
+method_wg_set_psk() {
+	local input idx psk=""
+	input=$(cat)
+	json_load "$input" 2>/dev/null
+	json_get_var idx index 2>/dev/null
+	json_get_var psk psk 2>/dev/null
+	json_init
+	case "$idx" in ''|*[!0-9]*) json_add_boolean ok 0; json_dump; return ;; esac
+	hmd_wg_ensure_keys
+	[ -n "$psk" ] || psk="$(wg genpsk)"
+	uci -q set hinet_multidial.wg$idx.psk="$psk"
+	uci -q commit hinet_multidial
+	hmd_reconcile >/dev/null 2>&1
+	json_add_boolean ok 1; json_add_string psk "$psk"; json_dump
+}
+
+# Rotate the keypair(s) — invalidates existing client configs. Then reconcile.
+method_wg_genkeys() {
+	local idx i priv pub cpriv cpub
+	idx=$(_read_index)
+	_regen() {
+		local i="$1"
+		priv="$(wg genkey)";  pub="$(printf '%s' "$priv"  | wg pubkey)"
+		cpriv="$(wg genkey)"; cpub="$(printf '%s' "$cpriv" | wg pubkey)"
+		uci -q set hinet_multidial.wg$i='wg'
+		uci -q set hinet_multidial.wg$i.private_key="$priv"
+		uci -q set hinet_multidial.wg$i.public_key="$pub"
+		uci -q set hinet_multidial.wg$i.client_key="$cpriv"
+		uci -q set hinet_multidial.wg$i.client_pub="$cpub"
+		[ -n "$(uci -q get hinet_multidial.wg$i.psk)" ] || uci -q set hinet_multidial.wg$i.psk="$(wg genpsk)"
+	}
+	if printf '%s' "$idx" | grep -qE '^[0-9]+$'; then
+		_regen "$idx"
+	else
+		i=1; while [ "$i" -le "$HMD_MAX" ]; do _regen "$i"; i=$((i + 1)); done
+	fi
+	uci -q commit hinet_multidial
+	hmd_reconcile >/dev/null 2>&1
+	json_init; json_add_boolean ok 1; json_dump
+}
+
 case "$1" in
 	list)
 		json_init
@@ -144,17 +253,25 @@ case "$1" in
 		json_add_object "redial"; json_add_string "iface" ""; json_close_object
 		json_add_object "apply";  json_close_object
 		json_add_object "import"; json_close_object
+		json_add_object "wg_status"; json_close_object
+		json_add_object "wg_config";  json_add_int    "index" 0; json_close_object
+		json_add_object "wg_set_psk"; json_add_int    "index" 0; json_add_string "psk" ""; json_close_object
+		json_add_object "wg_genkeys"; json_add_int    "index" 0; json_close_object
 		json_dump
 		;;
 	call)
 		case "$2" in
-			status) method_status ;;
-			dial)   method_dial ;;
-			stop)   method_stop ;;
-			redial) method_redial ;;
-			apply)  method_apply ;;
-			import) method_import ;;
-			*)      echo '{}' ;;
+			status)     method_status ;;
+			dial)       method_dial ;;
+			stop)       method_stop ;;
+			redial)     method_redial ;;
+			apply)      method_apply ;;
+			import)     method_import ;;
+			wg_status)  method_wg_status ;;
+			wg_config)  method_wg_config ;;
+			wg_set_psk) method_wg_set_psk ;;
+			wg_genkeys) method_wg_genkeys ;;
+			*)          echo '{}' ;;
 		esac
 		;;
 esac

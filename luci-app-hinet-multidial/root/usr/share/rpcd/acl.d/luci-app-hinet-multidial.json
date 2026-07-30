@@ -3,13 +3,13 @@
 		"description": "Grant access to the HiNet multi-dial controller",
 		"read": {
 			"ubus": {
-				"luci.hinet-multidial": [ "status" ]
+				"luci.hinet-multidial": [ "status", "wg_status", "wg_config" ]
 			},
 			"uci": [ "hinet_multidial", "network", "firewall" ]
 		},
 		"write": {
 			"ubus": {
-				"luci.hinet-multidial": [ "dial", "stop", "redial", "apply", "import" ]
+				"luci.hinet-multidial": [ "dial", "stop", "redial", "apply", "import", "wg_set_psk", "wg_genkeys" ]
 			},
 			"uci": [ "hinet_multidial", "network", "firewall" ]
 		}
