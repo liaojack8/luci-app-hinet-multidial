@@ -74,9 +74,17 @@ method_status() {
 # lift the shared account from the first one, and set 'count' to the highest
 # contiguous index found. Used once to migrate a hand-built setup into the app.
 method_import() {
-	local ifc idx user pass first=1 maxidx=0
-	for ifc in $(hmd_managed_ifaces); do
-		case "$ifc" in wanp[1-6]) ;; *) continue ;; esac
+	local ifc idx user pass first=1 maxidx=0 list=""
+	# Scan for wanp1..6 pppoe sections directly (tagged or not — we are adopting
+	# them). Must NOT use hmd_managed_ifaces here, which only returns tagged ones.
+	config_load network
+	_imp_collect() {
+		case "$1" in wanp[1-6]) ;; *) return 0 ;; esac
+		local p; config_get p "$1" proto ""
+		[ "$p" = "pppoe" ] && list="$list $1"
+	}
+	config_foreach _imp_collect interface
+	for ifc in $list; do
 		idx="${ifc#wanp}"
 		[ "$idx" -gt "$maxidx" ] && maxidx="$idx"
 		user=$(uci -q get network."$ifc".username)
