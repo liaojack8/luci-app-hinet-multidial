@@ -3,8 +3,9 @@
 # Sourced by /etc/init.d/hinet-multidial and /usr/libexec/rpcd/luci.hinet-multidial.
 #
 # INVARIANT: this code only ever manipulates interfaces named wanp1..wanp6 that
-# carry proto=pppoe AND the marker option `managed_by=hinet-multidial`. The DHCP
-# WAN lifeline (network.wan, proto=dhcp) can never be matched, so SSH is safe.
+# carry proto=pppoe AND the marker option `managed_by=hinet-multidial`. The user's
+# own WAN can never be matched — even when the WAN itself is PPPoE — so it is
+# never dialed, stopped, or auto-start-disabled by this app.
 
 . /lib/functions.sh
 
@@ -34,27 +35,34 @@ hmd_resolve_user() {
 	esac
 }
 
-# Echo the section names of every proto=pppoe interface, sorted.
+# A section belongs to this app iff it is named wanp1..wanp6, is proto=pppoe,
+# AND carries our ownership marker. This is what keeps us off the user's WAN
+# (which may itself be named 'wan' and be proto=pppoe).
+hmd_is_ours() {
+	local s="$1" p tag
+	case "$s" in wanp[1-6]) ;; *) return 1 ;; esac
+	config_get p "$s" proto ""; [ "$p" = "pppoe" ] || return 1
+	config_get tag "$s" managed_by ""; [ "$tag" = "$HMD_TAG" ]
+}
+
+# Echo the section names of the sessions WE own, sorted. Never the user's WAN.
 hmd_managed_ifaces() {
 	local list=""
 	config_load network
-	_c() { local p; config_get p "$1" proto; [ "$p" = "pppoe" ] && list="$list $1"; }
+	_c() { hmd_is_ours "$1" && list="$list $1"; }
 	config_foreach _c interface
 	# shellcheck disable=SC2086
 	printf '%s\n' $list | sort
 }
 
-# Persist auto=0 on every proto=pppoe interface (never the dhcp wan).
+# Persist auto=0 on the sessions WE own, so this app alone drives their dialing.
+# Never touches the user's WAN — even if the WAN is PPPoE.
 hmd_autostart_off() {
-	local changed=0
-	config_load network
-	_o() {
-		local p a
-		config_get p "$1" proto; [ "$p" = "pppoe" ] || return 0
-		config_get a "$1" auto 1
-		[ "$a" = "0" ] || { uci -q set network."$1".auto='0'; changed=1; }
-	}
-	config_foreach _o interface
+	local changed=0 ifc a
+	for ifc in $(hmd_managed_ifaces); do
+		a="$(uci -q get network."$ifc".auto)"
+		[ "$a" = "0" ] || { uci -q set network."$ifc".auto='0'; changed=1; }
+	done
 	[ "$changed" = 1 ] && uci -q commit network
 	return 0
 }
@@ -114,10 +122,9 @@ hmd_ensure_zone() {
 # Creates/updates wanp<i>, deletes managed wanp<j> no longer wanted, keeps them
 # all confined to private routing tables 100+i. Reloads network + firewall.
 hmd_reconcile() {
-	local wp wd
-	wp="$(uci -q get network.wan.proto)"; wd="$(uci -q get network.wan.device)"
-	[ "$wp" = "dhcp" ] || { echo "ABORT: network.wan.proto='$wp' (expected dhcp) — refusing to touch network"; return 1; }
-
+	# No WAN-proto guard: reconcile only ever creates/deletes our own tagged
+	# wanp<i> sessions and the wanppp/wg zones — it never touches network.wan.
+	# This lets the app work whether the WAN is dhcp, static, OR pppoe.
 	local desired ids zsid i u p
 	desired="$(hmd_desired | sort -n)"
 	ids="$(printf '%s\n' "$desired" | awk -F'\t' 'NF>=1 && $1!="" && !seen[$1]++ {print $1}')"
