@@ -69,6 +69,15 @@ chmod +x /etc/init.d/hinet-multidial /usr/libexec/rpcd/luci.hinet-multidial \
 /etc/init.d/rpcd restart
 ```
 
+### Automatic builds
+
+GitHub Actions runs the regression tests and builds the package with the OpenWrt
+24.10.0 SDK on pushes to `main`, pull requests targeting `main`, and manual runs.
+Download the application and Traditional Chinese translation `.ipk` files from
+**Actions → Build → a successful run → Artifacts**. The LuCI package is
+architecture-independent; one `aarch64_cortex-a53` SDK build is used.
+Pushing a `v*` tag also attaches the packages to a GitHub Release.
+
 ## Usage
 
 Open **Network → HiNet Multi-Dial**:
@@ -132,6 +141,11 @@ config rule
         option lookup 'main'
         option priority '9000'
 ```
+
+The original troubleshooting notes are available in
+[Traditional Chinese](docs/lan-wireguard-troubleshooting.md), with public IP
+addresses replaced by documentation examples. They describe the investigation
+and manual workaround; use the installation instructions above for v1.5.2.
 
 ### Upgrade notes from v1.5.1
 
