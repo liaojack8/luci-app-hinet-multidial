@@ -26,6 +26,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Test LAN WireGuard shell helpers
+        run: sh tests/test-lan-wireguard.sh
+
       - name: Build with OpenWrt SDK
         uses: openwrt/gh-action-sdk@main
         env:

@@ -139,13 +139,16 @@ msgstr ""
 msgid "WireGuard port base"
 msgstr ""
 
+msgid "Port base + number of sessions must not exceed 65535."
+msgstr ""
+
 msgid "Tunnel i listens on this port + i (base 51820 → wg1 = 51821). Opened on wan0."
 msgstr ""
 
 msgid "WireGuard Tunnels"
 msgstr ""
 
-msgid "One tunnel per active session. Download a client config (Endpoint auto-filled with wan0's IP) or scan the QR. The pre-shared key adds a symmetric layer — regenerate it any time."
+msgid "One tunnel per active session. Download a client config (Endpoint auto-filled with wan0's IP) or scan the QR. The same public IP/DDNS endpoint works from LAN and the Internet; the LAN hairpin follows startup and LAN address changes automatically. If it needs resynchronizing, run /etc/init.d/hinet-multidial hairpin, then stop the client for about one minute before reconnecting. The pre-shared key adds a symmetric layer."
 msgstr ""
 
 msgid "Tunnel"

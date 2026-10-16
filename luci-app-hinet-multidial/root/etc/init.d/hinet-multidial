@@ -15,12 +15,13 @@
 USE_PROCD=1
 START=25
 STOP=89
-EXTRA_COMMANDS="reconcile dial_all stop_all dial_one stop_one"
+EXTRA_COMMANDS="reconcile dial_all stop_all dial_one stop_one hairpin"
 EXTRA_HELP="	reconcile        Sync wanp interfaces to the configured count, reload
 	dial_all         Dial every session (staggered)
 	stop_all         Hang up every session
 	dial_one <ifc>   Dial a single session (e.g. wanp2)
-	stop_one <ifc>   Hang up a single session"
+	stop_one <ifc>   Hang up a single session
+	hairpin          Sync LAN WireGuard hairpin to the current LAN IPv4"
 
 PIDFILE=/var/run/hinet-multidial.pid
 
@@ -50,6 +51,8 @@ _stagger_worker() {
 
 start_service() {
 	hmd_autostart_off
+	touch "$HMD_HAIRPIN_ACTIVE"
+	hmd_hairpin_sync
 
 	# Idle supervised instance: its only purpose is to keep the reload trigger
 	# registered so Save & Apply reliably reaches reload_service().
@@ -70,6 +73,9 @@ start_service() {
 }
 
 stop_service() {
+	# Close the gate first so LAN hotplug cannot recreate rules while stopping.
+	rm -f "$HMD_HAIRPIN_ACTIVE"
+	hmd_hairpin_sync reload down
 	stop_all
 }
 
@@ -86,6 +92,9 @@ reload_service() {
 # ---- custom commands -------------------------------------------------------
 
 reconcile() { hmd_reconcile; }
+
+# Also called by LAN hotplug. Never rebuild interfaces or reload network here.
+hairpin() { hmd_hairpin_sync reload "${1:-}"; }
 
 dial_all() {
 	local boot_delay dial_delay

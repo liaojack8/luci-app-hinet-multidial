@@ -240,7 +240,12 @@ return view.extend({
 
 		o = s.option(form.Value, 'wg_port_base', _('WireGuard port base'),
 			_('Tunnel i listens on this port + i (base 51820 → wg1 = 51821). Opened on wan0.'));
-		o.datatype = 'port'; o.default = '51820'; o.placeholder = '51820';
+		o.datatype = 'range(1,65535)'; o.default = '51820'; o.placeholder = '51820';
+		o.validate = function(section_id, value) {
+			var count = Number(this.map.lookupOption('count', section_id)[0].formvalue(section_id)) || 1;
+			return Number(value || 51820) + count <= 65535 ||
+				_('Port base + number of sessions must not exceed 65535.');
+		};
 		o.depends('wg_enabled', '1');
 
 		return m.render().then(L.bind(function(mapEl) {
@@ -293,7 +298,10 @@ return view.extend({
 				E('h3', {}, _('WireGuard Tunnels')),
 				E('div', { 'class': 'cbi-section-descr' },
 					_('One tunnel per active session. Download a client config (Endpoint auto-filled with ' +
-					  'wan0\'s IP) or scan the QR. The pre-shared key adds a symmetric layer — regenerate it any time.')),
+					  'wan0\'s IP) or scan the QR. The same public IP/DDNS endpoint works from LAN and ' +
+					  'the Internet; the LAN hairpin follows startup and LAN address changes automatically. ' +
+					  'If it needs resynchronizing, run /etc/init.d/hinet-multidial hairpin, then stop the ' +
+					  'client for about one minute before reconnecting. The pre-shared key adds a symmetric layer.')),
 				E('div', { 'style': 'margin-bottom:1em' }, [
 					E('button', { 'class': 'btn cbi-button cbi-button-negative',
 						'click': ui.createHandlerFn(self, function() {

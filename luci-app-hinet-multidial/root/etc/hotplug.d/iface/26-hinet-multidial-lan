@@ -1,0 +1,8 @@
+#!/bin/sh
+# The LAN's device/IP can change without a reboot. Read the new netifd state,
+# updating only our WG DNAT snippet; never reconcile or reload network here.
+[ "$INTERFACE" = lan ] || exit 0
+case "$ACTION" in
+	ifup|ifupdate) /etc/init.d/hinet-multidial hairpin ;;
+	ifdown)       /etc/init.d/hinet-multidial hairpin down ;;
+esac

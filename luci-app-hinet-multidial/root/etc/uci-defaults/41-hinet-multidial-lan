@@ -1,0 +1,13 @@
+#!/bin/sh
+# A new defaults filename also runs when upgrading from 1.5.1.
+[ -z "$IPKG_INSTROOT" ] || exit 0
+. /usr/share/hinet-multidial/lib.sh
+
+hmd_lan_warn_legacy
+hmd_lan_rule_install || exit 1
+if [ "$HMD_LAN_RULE_CHANGED" = 1 ] && ubus -t 2 call network.interface dump >/dev/null 2>&1; then
+	# On first boot netifd may not be running yet. On live install, detach the
+	# reload so package installation and any rpcd caller are not blocked.
+	setsid sh -c 'sleep 1; /etc/init.d/network reload' </dev/null >/dev/null 2>&1 &
+fi
+exit 0
